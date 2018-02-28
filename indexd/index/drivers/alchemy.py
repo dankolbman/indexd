@@ -1,7 +1,7 @@
 import uuid
 import datetime
 
-from cdispyutils.log import get_logger
+from cdislogging import get_logger
 from contextlib import contextmanager
 from sqlalchemy import func, select, and_
 from sqlalchemy import String, Column, Integer, BigInteger, DateTime
@@ -371,7 +371,9 @@ class SQLAlchemyIndexDriver(IndexDriverABC):
 
         return ret
 
-    def update(self, did, rev, urls=None, file_name=None, version=None):
+    def update(
+            self, did, rev=None, urls=None,
+            file_name=None, version=None, metadata=None):
         '''
         Updates an existing record with new values.
         '''
@@ -386,7 +388,7 @@ class SQLAlchemyIndexDriver(IndexDriverABC):
             except MultipleResultsFound:
                 raise MultipleRecordsFound('multiple records found')
 
-            if rev != record.rev:
+            if rev is not None and rev != record.rev:
                 raise RevisionMismatch('revision mismatch')
 
             if urls is not None:
@@ -400,6 +402,18 @@ class SQLAlchemyIndexDriver(IndexDriverABC):
 
             if version is not None:
                 record.version = version
+
+            if metadata is not None:
+                # replace metadata with provided metadata
+                for m in session.query(IndexRecordMetadata).filter_by(
+                        did=record.did).all():
+                    session.delete(m)
+
+                record.index_metadata = [IndexRecordMetadata(
+                    did=record.did,
+                    key=m_key,
+                    value=m_value
+                ) for m_key, m_value in metadata.items()]
 
             record.rev = str(uuid.uuid4())[:8]
 

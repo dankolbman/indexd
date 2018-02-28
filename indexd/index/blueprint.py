@@ -161,6 +161,7 @@ def get_index_record(record):
     '''
     Returns a record.
     '''
+
     ret = blueprint.index_driver.get(record)
 
     return flask.jsonify(ret), 200
@@ -219,6 +220,7 @@ def put_index_record(record):
 
     rev = flask.request.args.get('rev')
     file_name = flask.request.json.get('file_name')
+    metadata = flask.request.json.get('metadata')
     version = flask.request.json.get('version')
     urls = flask.request.json.get('urls')
 
@@ -228,6 +230,7 @@ def put_index_record(record):
         file_name=file_name,
         version=version,
         urls=urls,
+        metadata=metadata,
     )
 
     ret = {
